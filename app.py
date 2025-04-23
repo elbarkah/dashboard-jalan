@@ -55,17 +55,33 @@ st.markdown("Analisis visual interaktif kondisi jalan desa berdasarkan kategori:
 st.markdown("### 🔍 Filter Data")
 col1, col2, col3, col4 = st.columns(4)
 
+# Pilih Kabupaten
 with col1:
     selected_kab = st.selectbox("📍 Kabupaten", ["Semua"] + sorted(df['KABUPATEN'].dropna().unique()))
+
+# Filter kecamatan berdasarkan kabupaten yang dipilih
 with col2:
-    selected_kec = st.selectbox("🏙️ Kecamatan", ["Semua"] + sorted(df['KECAMATAN'].dropna().unique()))
+    if selected_kab == "Semua":
+        selected_kec = st.selectbox("🏙️ Kecamatan", ["Semua"] + sorted(df['KECAMATAN'].dropna().unique()))
+    else:
+        kecamatan_kab = sorted(df[df['KABUPATEN'] == selected_kab]['KECAMATAN'].dropna().unique())
+        selected_kec = st.selectbox("🏙️ Kecamatan", ["Semua"] + kecamatan_kab)
+
+# Filter desa berdasarkan kecamatan yang dipilih
 with col3:
-    selected_desa = st.selectbox("🏘️ Desa", ["Semua"] + sorted(df['DESA'].dropna().unique()))
+    if selected_kec == "Semua":
+        selected_desa = st.selectbox("🏘️ Desa", ["Semua"] + sorted(df['DESA'].dropna().unique()))
+    else:
+        desa_kec = sorted(df[df['KECAMATAN'] == selected_kec]['DESA'].dropna().unique())
+        selected_desa = st.selectbox("🏘️ Desa", ["Semua"] + desa_kec)
+
+# Pilih Jenis Perkerasan
 with col4:
     selected_perkerasan = st.selectbox("🚧 Jenis Perkerasan", ["Semua"] + sorted(df['JENIS PERKERASAN'].dropna().unique()))
 
-# Terapkan filter sekaligus
+# Terapkan filter berdasarkan pilihan yang ada
 filtered_df = df.copy()
+
 if selected_kab != "Semua":
     filtered_df = filtered_df[filtered_df['KABUPATEN'] == selected_kab]
 if selected_kec != "Semua":
@@ -74,7 +90,7 @@ if selected_desa != "Semua":
     filtered_df = filtered_df[filtered_df['DESA'] == selected_desa]
 if selected_perkerasan != "Semua":
     filtered_df = filtered_df[filtered_df['JENIS PERKERASAN'] == selected_perkerasan]
-
+    
 # ===================== WARNA =====================
 warna_tema = {
     "baik": "#5837ed" if st.get_option("theme.base") == "light" else "#65d7db",
