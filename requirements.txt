@@ -1,9 +1,0 @@
-streamlit
-pandas
-plotly
-folium
-streamlit-folium
-openpyxl
-xlsxwriter
-pyarrow
-sqlite3
