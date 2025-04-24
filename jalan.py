@@ -5,23 +5,13 @@ import folium
 from streamlit_folium import st_folium
 from io import BytesIO
 import sqlite3
-import tracemalloc
 
 st.set_page_config(page_title="Dashboard Jalan Desa Jawa Barat", layout="wide")
-
-# ===================== PROFILING MEMORI =====================
-tracemalloc.start()
-
-def tampilkan_memori():
-    current, peak = tracemalloc.get_traced_memory()
-    st.sidebar.markdown(f"🧠 **Memori saat ini**: {current / 10**6:.2f} MB")
-    st.sidebar.markdown(f"🚀 **Puncak penggunaan**: {peak / 10**6:.2f} MB")
 
 # ===================== KONEKSI DATABASE =====================
 @st.cache_resource(ttl=3600)
 def get_connection():
-    conn = sqlite3.connect("jalan_desa.db")
-    return conn
+    return sqlite3.connect("jalan_desa.db")
 
 # ===================== LOAD DATA =====================
 @st.cache_data(ttl=3600)
@@ -67,26 +57,29 @@ with col1:
 # Filter kecamatan berdasarkan kabupaten yang dipilih
 with col2:
     if selected_kab == "Semua":
-        selected_kec = st.selectbox("🏙️ Kecamatan", ["Semua"] + sorted(df['KECAMATAN'].dropna().unique()))
+    # Jika "Semua" dipilih, tampilkan "Semua" dan semua kecamatan yang sudah di-sort
+        kecamatan_options = ["Semua"] + sorted(df['KECAMATAN'].dropna().unique())
     else:
-        kecamatan_kab = sorted(df[df['KABUPATEN'] == selected_kab]['KECAMATAN'].dropna().unique())
-        selected_kec = st.selectbox("🏙️ Kecamatan", ["Semua"] + kecamatan_kab)
+    # Jika kabupaten dipilih, tampilkan "Semua" dan kecamatan yang sesuai dengan kabupaten tersebut
+        kecamatan_options = ["Semua"] + sorted(df[df['KABUPATEN'] == selected_kab]['KECAMATAN'].dropna().unique())
+
+    selected_kec = st.selectbox("🏙️ Kecamatan", kecamatan_options)
 
 # Filter desa berdasarkan kecamatan yang dipilih
 with col3:
     if selected_kec == "Semua":
-        selected_desa = st.selectbox("🏘️ Desa", ["Semua"] + sorted(df['DESA'].dropna().unique()))
+    # Jika "Semua" dipilih, tampilkan "Semua" dan semua desa yang sudah di-sort
+        desa_options = ["Semua"] + sorted(df['DESA'].dropna().unique())
     else:
-        desa_kec = sorted(df[df['KECAMATAN'] == selected_kec]['DESA'].dropna().unique())
-        selected_desa = st.selectbox("🏘️ Desa", ["Semua"] + desa_kec)
+    # Jika kecamatan dipilih, tampilkan "Semua" dan desa yang sesuai dengan kecamatan tersebut
+        desa_options = ["Semua"] + sorted(df[df['KECAMATAN'] == selected_kec]['DESA'].dropna().unique())
 
-# Pilih Jenis Perkerasan
+    selected_desa = st.selectbox("🏘️ Desa", desa_options)
 with col4:
     selected_perkerasan = st.selectbox("🚧 Jenis Perkerasan", ["Semua"] + sorted(df['JENIS PERKERASAN'].dropna().unique()))
 
-# Terapkan filter berdasarkan pilihan yang ada
+# Terapkan filter
 filtered_df = df.copy()
-
 if selected_kab != "Semua":
     filtered_df = filtered_df[filtered_df['KABUPATEN'] == selected_kab]
 if selected_kec != "Semua":
@@ -202,11 +195,10 @@ with tab3:
     with col4:
         st.markdown(biaya_box("❌ Total Rusak", total_rusak, warna_tema['baik']), unsafe_allow_html=True)
 
-
 # ===================== PETA =====================
 def render_peta(df_map):
     st.subheader("🗺️ Peta Jalan Desa")
-    map_df = filtered_df.dropna(subset=['LAT AWAL', 'LNG AWAL', 'LAT AKHIR', 'LNG AKHIR'])
+    map_df = df_map.dropna(subset=['LAT AWAL', 'LNG AWAL', 'LAT AKHIR', 'LNG AKHIR'])
     if not map_df.empty:
         m = folium.Map(location=[map_df['LAT AWAL'].mean(), map_df['LNG AWAL'].mean()], zoom_start=10)
         for _, row in map_df.iterrows():
@@ -224,6 +216,7 @@ def render_peta(df_map):
     else:
         st.info("Tidak ada data koordinat untuk ditampilkan.")
 
+# Render peta
 with tab4:
     render_peta(filtered_df)
 
@@ -236,6 +229,3 @@ with tab5:
         filtered_df.to_excel(writer, sheet_name='Data Jalan Desa', index=False)
     output.seek(0)
     st.download_button("📥 Download Data (Excel)", output, file_name="data_jalan_desa.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-# ===================== TAMPILKAN PROFIL MEMORI =====================
-tampilkan_memori()
