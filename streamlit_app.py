@@ -145,9 +145,17 @@ if st.session_state.get("show_data") and st.session_state.get("filtered_df") is 
                 grouping = 'DESA'
             elif selected_kab != "Semua":
                 grouping = 'KECAMATAN'
+            # Pastikan kolom dalam agg_cols adalah numerik
+            for col in agg_cols: filtered_df[col] = pd.to_numeric(filtered_df[col], errors='coerce')
             
-            summary = filtered_df.groupby(grouping)[agg_cols].sum()
-            fig = px.bar(summary, x=summary.index, y=agg_cols, barmode='stack', title=f"Kondisi Jalan per {grouping}")
+            # Mengelompokkan dan menjumlahkan data
+            summary = filtered_df.groupby(grouping)[agg_cols].sum().reset_index()
+
+            # Mengubah format data menjadi panjang
+            summary_long = pd.melt(summary, id_vars=[grouping], value_vars=agg_cols, var_name='Kondisi', value_name='Panjang (meter)')
+
+            # Membuat grafik
+            fig = px.bar(summary_long, x=grouping, y='Panjang (meter)', color='Kondisi', barmode='stack', title=f"Kondisi Jalan per {grouping}")
             st.plotly_chart(fig, use_container_width=True)
 
         with tab3:
