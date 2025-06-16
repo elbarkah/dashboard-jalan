@@ -239,75 +239,73 @@ if "filtered_df" in st.session_state:
         buffer.seek(0)
         st.download_button("📥 Download Ringkasan Kondisi Jalan", buffer, file_name="ringkasan_kondisi_jalan.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-with tab2:
-    st.subheader("📈 Grafik Kondisi Jalan")
+    with tab2:
+        st.subheader("📈 Grafik Kondisi Jalan")
 
-    agg_cols = ['BAIK (meter)', 'RUSAK RINGAN (meter)', 'RUSAK SEDANG (meter)', 'RUSAK BERAT (meter)']
-    for col in agg_cols:
-        filtered_df[col] = pd.to_numeric(filtered_df[col], errors='coerce')
+        agg_cols = ['BAIK (meter)', 'RUSAK RINGAN (meter)', 'RUSAK SEDANG (meter)', 'RUSAK BERAT (meter)']
+        for col in agg_cols:
+            filtered_df[col] = pd.to_numeric(filtered_df[col], errors='coerce')
 
-    # Tentukan grouping level
-    grouping = 'KABUPATEN'
-    if selected_desa != "Semua":
-        grouping = 'NAMA RUAS JALAN DESA'
-    elif selected_kec != "Semua":
-        grouping = 'DESA'
-    elif selected_kab != "Semua":
-        grouping = 'KECAMATAN'
+        # Tentukan grouping level
+        grouping = 'KABUPATEN'
+        if selected_desa != "Semua":
+            grouping = 'NAMA RUAS JALAN DESA'
+        elif selected_kec != "Semua":
+            grouping = 'DESA'
+        elif selected_kab != "Semua":
+            grouping = 'KECAMATAN'
 
-    summary = filtered_df.groupby(grouping)[agg_cols].sum().reset_index()
-    total_per_group = summary[agg_cols].sum(axis=1)
-    total_semua = total_per_group.sum()
+        summary = filtered_df.groupby(grouping)[agg_cols].sum().reset_index()
+        total_per_group = summary[agg_cols].sum(axis=1)
+        total_semua = total_per_group.sum()
 
-    summary_long = pd.melt(summary, id_vars=[grouping], value_vars=agg_cols, 
-                           var_name='Kondisi', value_name='Panjang (meter)')
+        summary_long = pd.melt(summary, id_vars=[grouping], value_vars=agg_cols, 
+                            var_name='Kondisi', value_name='Panjang (meter)')
 
-    # Hitung persentase dari total keseluruhan untuk setiap bar
-    summary_long["Persentase (%)"] = summary_long["Panjang (meter)"] / total_semua * 100
+        # Hitung persentase dari total keseluruhan untuk setiap bar
+        summary_long["Persentase (%)"] = summary_long["Panjang (meter)"] / total_semua * 100
 
-    fig = px.bar(
-    summary_long,
-    x=grouping,
-    y="Panjang (meter)",
-    color="Kondisi",
-    barmode="stack",
-    title=f"Kondisi Jalan per {grouping}",
-    hover_data={
-        "Panjang (meter)": ":,.0f",
-        "Persentase (%)": ":.2f",
-        grouping: True,
-        "Kondisi": True
-    }
-)
-    # Default hover: hanya yang ditunjuk
-    st.plotly_chart(fig, use_container_width=True)
-
-
-    # ==================== GRAFIK BERDASARKAN JENIS PERKERASAN ====================
-    st.subheader("📈 Grafik Kondisi Jalan berdasarkan Jenis Perkerasan")
-    df_plot = df_metrics.groupby("JENIS PERKERASAN")[agg_cols].sum().reset_index()
-    df_plot_melted = df_plot.melt(id_vars="JENIS PERKERASAN", var_name="Kondisi", value_name="Panjang (meter)")
-    total_jenis = df_plot_melted["Panjang (meter)"].sum()
-    df_plot_melted["Persentase (%)"] = df_plot_melted["Panjang (meter)"] / total_jenis * 100
-
-    fig2 = px.bar(
-    df_plot_melted,
-    x="JENIS PERKERASAN",
-    y="Panjang (meter)",
-    color="Kondisi",
-    barmode="stack",
-    title="Kondisi Jalan berdasarkan Jenis Perkerasan",
-    hover_data={
-        "Panjang (meter)": ":,.0f",
-        "Persentase (%)": ":.2f",
-        "JENIS PERKERASAN": True,
-        "Kondisi": True
-    }
-)
-    # Tidak pakai hovermode unified
-    st.plotly_chart(fig2, use_container_width=True)
+        fig = px.bar(
+        summary_long,
+        x=grouping,
+        y="Panjang (meter)",
+        color="Kondisi",
+        barmode="stack",
+        title=f"Kondisi Jalan per {grouping}",
+        hover_data={
+            "Panjang (meter)": ":,.0f",
+            "Persentase (%)": ":.2f",
+            grouping: True,
+            "Kondisi": True
+        }
+    )
+        # Default hover: hanya yang ditunjuk
+        st.plotly_chart(fig, use_container_width=True)
 
 
+        # ==================== GRAFIK BERDASARKAN JENIS PERKERASAN ====================
+        st.subheader("📈 Grafik Kondisi Jalan berdasarkan Jenis Perkerasan")
+        df_plot = df_metrics.groupby("JENIS PERKERASAN")[agg_cols].sum().reset_index()
+        df_plot_melted = df_plot.melt(id_vars="JENIS PERKERASAN", var_name="Kondisi", value_name="Panjang (meter)")
+        total_jenis = df_plot_melted["Panjang (meter)"].sum()
+        df_plot_melted["Persentase (%)"] = df_plot_melted["Panjang (meter)"] / total_jenis * 100
+
+        fig2 = px.bar(
+        df_plot_melted,
+        x="JENIS PERKERASAN",
+        y="Panjang (meter)",
+        color="Kondisi",
+        barmode="stack",
+        title="Kondisi Jalan berdasarkan Jenis Perkerasan",
+        hover_data={
+            "Panjang (meter)": ":,.0f",
+            "Persentase (%)": ":.2f",
+            "JENIS PERKERASAN": True,
+            "Kondisi": True
+        }
+    )
+        # Tidak pakai hovermode unified
+        st.plotly_chart(fig2, use_container_width=True)
 
     with tab3:
         st.subheader("💰 Estimasi Biaya Perbaikan Jalan")
@@ -343,27 +341,30 @@ with tab2:
         st.subheader("🗺️ Peta Jalan Desa")
         render_peta(filtered_df)
 
-with tab5:
-    st.subheader("📄 Data Mentah")
+    with tab5:
+        st.subheader("📄 Data Mentah")
 
-    # Buat salinan dataframe dan tambahkan kolom nomor urut manual
-    df_display = filtered_df.copy().reset_index(drop=True)
-    df_display.index = df_display.index + 1  # Mulai dari 1
-    
-    # Tampilkan hanya 2 kolom untuk nomor: "No" (manual) dan "NO" (data asli)
-    st.dataframe(df_display, use_container_width=True)
+        # Buat salinan dataframe dan tambahkan kolom nomor urut manual
+        df_display = filtered_df.copy().reset_index(drop=True)
+        df_display.index = df_display.index + 1  # Mulai dari 1
+        
+        # Tampilkan hanya 2 kolom untuk nomor: "No" (manual) dan "NO" (data asli)
+        st.dataframe(df_display, use_container_width=True)
 
-    # Export ke Excel
-    raw = BytesIO()
-    with pd.ExcelWriter(raw, engine="xlsxwriter") as writer:
-        df_display.to_excel(writer, sheet_name="Data Mentah", index=False)
-    raw.seek(0)
+        # Export ke Excel
+        raw = BytesIO()
+        with pd.ExcelWriter(raw, engine="xlsxwriter") as writer:
+            df_display.to_excel(writer, sheet_name="Data Mentah", index=False)
+        raw.seek(0)
 
-    st.download_button(
-        "📥 Download Data Mentah",
-        raw,
-        file_name="data_mentah_jalan_desa.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            "📥 Download Data Mentah",
+            raw,
+            file_name="data_mentah_jalan_desa.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+
+
 
 
